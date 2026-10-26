@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Loodo - Play Online with Friends & Offline Ludo</title>
+  <meta name="description" content="Play Ludo online with friends via private room codes or offline against smart AI bots. Features modern glassmorphism design, 3D dice, and mobile-friendly touch controls.">
+  <meta name="theme-color" content="#090D16">
+
+  <!-- Mobile App Manifest & Web App meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/board.css">
+  <link rel="stylesheet" href="css/dice.css">
+  <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+  <!-- Ambient Glassmorphic Background Orbs -->
+  <div class="ambient-glow glow-red"></div>
+  <div class="ambient-glow glow-green"></div>
+  <div class="ambient-glow glow-yellow"></div>
+  <div class="ambient-glow glow-blue"></div>
+
+  <!-- Fullscreen Particle FX Canvas -->
+  <canvas id="fx-canvas" class="fx-canvas"></canvas>
+
+  <!-- ======================================================== -->
+  <!-- 1. MAIN MENU SCREEN (HOME VIEW) -->
+  <!-- ======================================================== -->
+  <section id="screen-main-menu" class="app-screen screen-active">
+    <div class="menu-container">
+      <!-- Animated Brand Header -->
+      <div class="menu-hero">
+        <div class="hero-dice-badge">🎲</div>
+        <h1 class="hero-title">LOO<span>DO</span></h1>
+        <p class="hero-subtitle">Modern Glassmorphic Multiplayer</p>
+      </div>
+
+      <!-- Quick Player Customization Card -->
+      <div class="profile-chip-card glass-panel">
+        <div class="avatar-select-group">
+          <span id="current-user-avatar" class="user-avatar-display" title="Change Avatar">👑</span>
+          <div class="user-info-text">
+            <span class="user-label">YOUR PROFILE</span>
+            <input type="text" id="input-home-name" class="user-name-input" value="Ludo Master" maxlength="15" placeholder="Enter Name" />
+          </div>
+        </div>
+        <div class="avatar-picker-row" id="avatar-picker-row">
+          <button class="btn-avatar-opt selected" data-avatar="👑">👑</button>
+          <button class="btn-avatar-opt" data-avatar="🦊">🦊</button>
+          <button class="btn-avatar-opt" data-avatar="🦁">🦁</button>
+          <button class="btn-avatar-opt" data-avatar="🐯">🐯</button>
+          <button class="btn-avatar-opt" data-avatar="🐼">🐼</button>
+          <button class="btn-avatar-opt" data-avatar="🚀">🚀</button>
+          <button class="btn-avatar-opt" data-avatar="⚡">⚡</button>
+          <button class="btn-avatar-opt" data-avatar="🔥">🔥</button>
+        </div>
+      </div>
+
+      <!-- Mode Cards Grid -->
+      <div class="menu-buttons-list">
+        <!-- Online Multiplayer (Hero Button) -->
+        <button id="btn-menu-online" class="mode-cta-btn cta-online glass-panel">
+          <div class="cta-icon-wrap">🌐</div>
+          <div class="cta-text-wrap">
+            <div class="cta-title-row">
+              <h3>Play With Friends</h3>
+              <span class="cta-badge">ONLINE</span>
+            </div>
+            <p>Create a private room or join your friends anywhere</p>
+          </div>
+          <div class="cta-arrow">➔</div>
+        </button>
+
+        <!-- Play vs Computer (Solo AI) -->
+        <button id="btn-menu-ai" class="mode-cta-btn cta-ai glass-panel">
+          <div class="cta-icon-wrap">🤖</div>
+          <div class="cta-text-wrap">
+            <div class="cta-title-row">
+              <h3>Play vs Computer</h3>
+              <span class="cta-badge badge-neutral">SOLO</span>
+            </div>
+            <p>Practice against 1–3 intelligent heuristic bots</p>
+          </div>
+          <div class="cta-arrow">➔</div>
+        </button>
+
+        <!-- Pass & Play (Local Couch) -->
+        <button id="btn-menu-pass" class="mode-cta-btn cta-pass glass-panel">
+          <div class="cta-icon-wrap">👥</div>
+          <div class="cta-text-wrap">
+            <div class="cta-title-row">
+              <h3>Pass & Play</h3>
+              <span class="cta-badge badge-neutral">OFFLINE</span>
+            </div>
+            <p>2 to 4 players on this phone or tablet</p>
+          </div>
+          <div class="cta-arrow">➔</div>
+        </button>
+
+        <!-- How to Play & Audio Row -->
+        <div class="menu-bottom-actions">
+          <button id="btn-menu-rules" class="btn-glass flex-1">📖 Game Rules</button>
+          <button id="btn-menu-sound" class="btn-glass-icon" title="Toggle Sound">🔊</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 2. ROOM CREATE & JOIN PORTAL SCREEN -->
+  <!-- ======================================================== -->
+  <section id="screen-room-portal" class="app-screen">
+    <div class="portal-container glass-panel">
+      <!-- Portal Top Header -->
+      <div class="portal-header">
+        <button id="btn-back-from-portal" class="btn-back">✕</button>
+        <h2>Online Multiplayer</h2>
+        <div style="width: 32px;"></div>
+      </div>
+
+      <!-- Segmented Tab Switcher (Create vs Join) -->
+      <div class="portal-tabs">
+        <button id="tab-btn-create" class="portal-tab active">Create Room</button>
+        <button id="tab-btn-join" class="portal-tab">Join Room</button>
+      </div>
+
+      <!-- Tab Content: CREATE ROOM -->
+      <div id="tab-content-create" class="portal-tab-content active">
+        <p class="portal-subtext">Generate a private room and invite your friends with a link or 5-letter code!</p>
+
+        <div class="portal-form-group">
+          <label>Your Starting Color:</label>
+          <div class="color-picker-grid">
+            <label class="color-choice choice-red">
+              <input type="radio" name="create-color" value="red" checked />
+              <span class="color-circle"></span>
+              <span class="color-name">Red</span>
+            </label>
+            <label class="color-choice choice-green">
+              <input type="radio" name="create-color" value="green" />
+              <span class="color-circle"></span>
+              <span class="color-name">Green</span>
+            </label>
+            <label class="color-choice choice-yellow">
+              <input type="radio" name="create-color" value="yellow" />
+              <span class="color-circle"></span>
+              <span class="color-name">Yellow</span>
+            </label>
+            <label class="color-choice choice-blue">
+              <input type="radio" name="create-color" value="blue" />
+              <span class="color-circle"></span>
+              <span class="color-name">Blue</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-action-create-room" class="btn-glass btn-primary full-width btn-tall">
+          <span>Create Private Room</span> ✨
+        </button>
+      </div>
+
+      <!-- Tab Content: JOIN ROOM -->
+      <div id="tab-content-join" class="portal-tab-content">
+        <p class="portal-subtext">Enter the 5-letter room code shared by your friend.</p>
+
+        <div class="portal-form-group">
+          <label for="input-portal-room-code">Room Code:</label>
+          <input type="text" id="input-portal-room-code" class="glass-input code-input-hero" placeholder="e.g. 7K9A" maxlength="6" />
+        </div>
+
+        <div class="portal-form-group">
+          <label>Your Preferred Color:</label>
+          <div class="color-picker-grid">
+            <label class="color-choice choice-green">
+              <input type="radio" name="join-color" value="green" checked />
+              <span class="color-circle"></span>
+              <span class="color-name">Green</span>
+            </label>
+            <label class="color-choice choice-yellow">
+              <input type="radio" name="join-color" value="yellow" />
+              <span class="color-circle"></span>
+              <span class="color-name">Yellow</span>
+            </label>
+            <label class="color-choice choice-blue">
+              <input type="radio" name="join-color" value="blue" />
+              <span class="color-circle"></span>
+              <span class="color-name">Blue</span>
+            </label>
+            <label class="color-choice choice-red">
+              <input type="radio" name="join-color" value="red" />
+              <span class="color-circle"></span>
+              <span class="color-name">Red</span>
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-action-join-room" class="btn-glass btn-primary full-width btn-tall">
+          <span>Join Game Room</span> 🔗
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 3. ONLINE LOBBY WAITING ROOM SCREEN -->
+  <!-- ======================================================== -->
+  <section id="screen-online-lobby" class="app-screen">
+    <div class="lobby-screen-card glass-panel">
+      <!-- Lobby Header -->
+      <div class="lobby-top-bar">
+        <button id="btn-leave-lobby" class="btn-glass btn-sm">← Leave</button>
+        <span class="lobby-badge">LOBBY WAITING</span>
+        <div style="width: 60px;"></div>
+      </div>
+
+      <!-- Room Code Hero Box with Share Actions -->
+      <div class="room-invite-box glass-panel">
+        <span class="invite-label">ROOM CODE</span>
+        <div class="invite-code-display" id="lobby-room-code-display">-----</div>
+        
+        <div class="invite-buttons-row">
+          <button id="btn-lobby-copy" class="btn-glass btn-sm">Copy Code 📋</button>
+          <button id="btn-lobby-share-link" class="btn-glass btn-primary btn-sm">Share Invite 🔗</button>
+          <button id="btn-lobby-whatsapp" class="btn-glass btn-whatsapp btn-sm">WhatsApp 💬</button>
+        </div>
+      </div>
+
+      <!-- 4 Players Slots List -->
+      <div class="lobby-slots-container">
+        <div class="lobby-slots-header">
+          <span>Players in Room (<span id="lobby-player-count">1</span>/4):</span>
+          <span class="lobby-min-tag">Min 2 to start</span>
+        </div>
+
+        <div id="lobby-slots-list" class="lobby-slots-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Lobby Host Controls -->
+      <div class="lobby-bottom-dock">
+        <button id="btn-lobby-add-bot" class="btn-glass flex-1">+ Add AI Bot 🤖</button>
+        <button id="btn-lobby-start-game" class="btn-glass btn-primary flex-1 btn-tall" style="display: none;">
+          Start Game 🚀
+        </button>
+        <div id="lobby-waiting-hint" class="lobby-waiting-hint">
+          Waiting for host to start the game...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- 4. ACTIVE GAME ARENA SCREEN (MOBILE 4-CORNER FIT) -->
+  <!-- ======================================================== -->
+  <section id="screen-game-arena" class="app-screen">
+    <div class="arena-shell">
+      <!-- Compact Mobile Navigation Header -->
+      <header class="arena-top-bar glass-panel">
+        <div class="arena-nav-left">
+          <button id="btn-arena-menu" class="btn-glass-icon" title="Game Menu">☰</button>
+          <div id="arena-room-chip" class="arena-room-chip" style="display: none;" title="Tap to copy invite link">
+            <span>Room:</span>
+            <strong id="arena-room-code-text">ABCD</strong>
+            <span>📋</span>
+          </div>
+        </div>
+
+        <!-- Live Turn Status Notification Badge -->
+        <div id="turn-status-banner" class="arena-turn-banner">
+          Roll the dice!
+        </div>
+
+        <div class="arena-nav-right">
+          <button id="btn-arena-sound" class="btn-glass-icon" title="Toggle Sound">🔊</button>
+          <button id="btn-toggle-chat" class="btn-glass-icon relative-badge" title="Live Reactions">
+            💬
+            <span id="chat-unread-dot" class="unread-dot"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Center Game Arena (Top Players + 15x15 Board + Bottom Players) -->
+      <main class="arena-center-stage">
+        <!-- Top Row Players: Red (Top-Left) and Green (Top-Right) -->
+        <div class="arena-players-row top-players-row">
+          <!-- Red Player Widget -->
+          <div id="player-card-red" class="mini-player-badge card-red glass-panel">
+            <div class="mini-avatar-wrap">
+              <span class="player-avatar">👑</span>
+              <div class="player-turn-ring"></div>
+            </div>
+            <div class="mini-player-info">
+              <div class="mini-name-row">
+                <span class="player-name">Player 1</span>
+                <span class="mini-color-dot dot-red"></span>
+              </div>
+              <span class="tokens-home-badge">0/4</span>
+            </div>
+          </div>
+
+          <!-- Green Player Widget -->
+          <div id="player-card-green" class="mini-player-badge card-green glass-panel">
+            <div class="mini-player-info align-right">
+              <div class="mini-name-row">
+                <span class="mini-color-dot dot-green"></span>
+                <span class="player-name">Player 2</span>
+              </div>
+              <span class="tokens-home-badge">0/4</span>
+            </div>
+            <div class="mini-avatar-wrap">
+              <span class="player-avatar">🤖</span>
+              <div class="player-turn-ring"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 15x15 Ludo Board Square -->
+        <div class="arena-board-container">
+          <div class="board-aspect-box">
+            <div id="ludo-board" class="ludo-board glass-panel">
+              <!-- Dynamically populated 15x15 cells by LudoUI -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row Players: Blue (Bottom-Left) and Yellow (Bottom-Right) -->
+        <div class="arena-players-row bottom-players-row">
+          <!-- Blue Player Widget -->
+          <div id="player-card-blue" class="mini-player-badge card-blue glass-panel">
+            <div class="mini-avatar-wrap">
+              <span class="player-avatar">⚡</span>
+              <div class="player-turn-ring"></div>
+            </div>
+            <div class="mini-player-info">
+              <div class="mini-name-row">
+                <span class="player-name">Player 4</span>
+                <span class="mini-color-dot dot-blue"></span>
+              </div>
+              <span class="tokens-home-badge">0/4</span>
+            </div>
+          </div>
+
+          <!-- Yellow Player Widget -->
+          <div id="player-card-yellow" class="mini-player-badge card-yellow glass-panel">
+            <div class="mini-player-info align-right">
+              <div class="mini-name-row">
+                <span class="mini-color-dot dot-yellow"></span>
+                <span class="player-name">Player 3</span>
+              </div>
+              <span class="tokens-home-badge">0/4</span>
+            </div>
+            <div class="mini-avatar-wrap">
+              <span class="player-avatar">👾</span>
+              <div class="player-turn-ring"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Bottom Dice & Reactions Action Dock -->
+      <footer class="arena-action-dock glass-panel">
+        <!-- Quick Emoji Reaction Bar -->
+        <div class="dock-emoji-bar">
+          <button class="btn-emoji-reaction" data-emoji="🔥">🔥</button>
+          <button class="btn-emoji-reaction" data-emoji="👏">👏</button>
+          <button class="btn-emoji-reaction" data-emoji="😂">😂</button>
+          <button class="btn-emoji-reaction" data-emoji="😭">😭</button>
+          <button class="btn-emoji-reaction" data-emoji="👑">👑</button>
+          <button class="btn-emoji-reaction" data-emoji="🎲">🎲</button>
+        </div>
+
+        <!-- 3D Dice and Big Tap-to-Roll Target -->
+        <div class="dock-dice-row">
+          <div class="dice-viewport-compact">
+            <div id="dice-cube" class="dice-cube" data-color="red">
+              <div class="dice-face face-front"><span class="pip pip-center"></span></div>
+              <div class="dice-face face-back">
+                <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+                <span class="pip pip-ml"></span><span class="pip pip-mr"></span>
+                <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+              </div>
+              <div class="dice-face face-right"><span class="pip pip-tr"></span><span class="pip pip-bl"></span></div>
+              <div class="dice-face face-left">
+                <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+                <span class="pip pip-center"></span>
+                <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+              </div>
+              <div class="dice-face face-top"><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span></div>
+              <div class="dice-face face-bottom">
+                <span class="pip pip-tl"></span><span class="pip pip-tr"></span>
+                <span class="pip pip-bl"></span><span class="pip pip-br"></span>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-roll-dice" class="btn-roll-dice flex-1">
+            <span>ROLL DICE</span>
+            <span class="key-hint">SPACE / TAP</span>
+          </button>
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- DRAWERS & MODALS -->
+  <!-- ======================================================== -->
+
+  <!-- Slide-out In-Game Menu Drawer -->
+  <div id="drawer-game-menu" class="modal-overlay">
+    <div class="drawer-panel glass-panel">
+      <div class="drawer-header">
+        <h3>Game Menu</h3>
+        <button class="btn-close-drawer">✕</button>
+      </div>
+      <div class="drawer-content">
+        <button id="btn-drawer-invite" class="btn-glass full-width" style="display: none;">
+          Share Room Code 🔗
+        </button>
+        <button id="btn-drawer-rules" class="btn-glass full-width">📖 How to Play</button>
+        <button id="btn-drawer-sound" class="btn-glass full-width">🔊 Toggle Sound</button>
+        <button id="btn-drawer-exit" class="btn-glass btn-danger full-width">🏠 Exit to Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide-out Chat & Live Reactions Drawer -->
+  <div id="drawer-chat" class="modal-overlay">
+    <div class="drawer-panel chat-drawer-panel glass-panel">
+      <div class="drawer-header">
+        <h3>💬 Room Chat</h3>
+        <button class="btn-close-drawer">✕</button>
+      </div>
+      <div class="chat-drawer-body">
+        <div id="chat-messages-list" class="chat-messages-list">
+          <div class="chat-msg msg-system">
+            <span class="chat-text">Welcome! Roll 6 to release your tokens.</span>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="input-chat-text" placeholder="Type a message..." maxlength="60" />
+          <button id="btn-send-chat" class="btn-chat-send">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pass & Play Offline Setup Modal -->
+  <div id="modal-offline-setup" class="modal-overlay">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h2>Pass & Play Setup</h2>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="setup-form">
+        <div class="form-group">
+          <label for="select-player-count">Number of Players:</label>
+          <select id="select-player-count" class="glass-input">
+            <option value="2">2 Players (Red vs Yellow)</option>
+            <option value="3">3 Players (Red, Green, Yellow)</option>
+            <option value="4" selected>4 Players (All Colors)</option>
+          </select>
+        </div>
+
+        <div class="player-inputs-grid">
+          <div class="input-row color-red">
+            <span class="color-dot dot-red"></span>
+            <input type="text" id="input-p1-name" value="Player 1" placeholder="Player 1 (Red)" maxlength="14" class="glass-input" />
+          </div>
+          <div class="input-row color-green">
+            <span class="color-dot dot-green"></span>
+            <input type="text" id="input-p2-name" value="Player 2" placeholder="Player 2 (Green)" maxlength="14" class="glass-input" />
+          </div>
+          <div class="input-row color-yellow">
+            <span class="color-dot dot-yellow"></span>
+            <input type="text" id="input-p3-name" value="Player 3" placeholder="Player 3 (Yellow)" maxlength="14" class="glass-input" />
+          </div>
+          <div class="input-row color-blue">
+            <span class="color-dot dot-blue"></span>
+            <input type="text" id="input-p4-name" value="Player 4" placeholder="Player 4 (Blue)" maxlength="14" class="glass-input" />
+          </div>
+        </div>
+
+        <button id="btn-start-pass-game" class="btn-glass btn-primary full-width btn-tall">Start Game 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div id="modal-rules" class="modal-overlay">
+    <div class="modal-card glass-panel rules-modal-card">
+      <div class="modal-header">
+        <h2>Ludo Game Rules</h2>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="rules-content">
+        <div class="rule-item">
+          <div class="rule-icon">🎲</div>
+          <div>
+            <h4>Rolling a 6</h4>
+            <p>Roll a 6 to bring a token out from the Yard to your Start Cell. Rolling a 6 also grants an <strong>Extra Roll</strong>! (3 consecutive 6s skips your turn).</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">⚔️</div>
+          <div>
+            <h4>Capturing Opponents</h4>
+            <p>Landing on an opponent's token sends it back to their Yard and awards you an <strong>Extra Roll</strong>!</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">★</div>
+          <div>
+            <h4>Safe Star Cells</h4>
+            <p>The 8 cells marked with a star (★) are Safe Zones. Tokens on safe cells cannot be captured.</p>
+          </div>
+        </div>
+        <div class="rule-item">
+          <div class="rule-icon">🏆</div>
+          <div>
+            <h4>Home Stretch & Winning</h4>
+            <p>After circling the board, move into your colored Home Corridor. Bring all 4 tokens to the Center to win!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory Modal -->
+  <div id="modal-victory" class="modal-overlay">
+    <div class="modal-card glass-panel victory-card">
+      <div class="victory-header">
+        <div class="victory-trophy">🏆</div>
+        <h2>VICTORY!</h2>
+        <p>Congratulations to the winners!</p>
+      </div>
+
+      <div id="victory-podium" class="victory-podium">
+        <!-- Ranks dynamically populated -->
+      </div>
+
+      <button id="btn-play-again" class="btn-glass btn-primary full-width btn-tall">Return to Menu 🎲</button>
+    </div>
+  </div>
+
+  <!-- Socket.IO Client -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Client JavaScript Modules -->
+  <script src="js/audio.js"></script>
+  <script src="js/board-data.js"></script>
+  <script src="js/game-engine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/dice.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+/* ========================================================
+   LOODO - 3D Realistic Interactive Dice Aesthetics
+   ======================================================== */
+
+.dice-arena {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  gap: 18px;
+  background: var(--panel-bg);
+}
+
+.dice-title {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #94A3B8;
+}
+
+/* 3D Viewport Stage */
+.dice-viewport {
+  width: 110px;
+  height: 110px;
+  perspective: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The 3D Cube */
+.dice-cube {
+  width: 70px;
+  height: 70px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  cursor: pointer;
+}
+
+.dice-viewport-compact .dice-cube {
+  transform-origin: center center;
+  scale: 0.72;
+}
+
+/* Face Styling */
+.dice-face {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  box-shadow: 
+    inset 0 0 15px rgba(255, 255, 255, 0.25),
+    inset 0 0 2px rgba(255, 255, 255, 0.8),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  box-sizing: border-box;
+}
+
+/* 3D Face Transforms (Half-size is 35px) */
+.face-front  { transform: rotateY(0deg) translateZ(35px); }
+.face-back   { transform: rotateY(180deg) translateZ(35px); }
+.face-right  { transform: rotateY(90deg) translateZ(35px); }
+.face-left   { transform: rotateY(-90deg) translateZ(35px); }
+.face-top    { transform: rotateX(90deg) translateZ(35px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(35px); }
+
+/* Pips (Dice Dots) */
+.pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  align-self: center;
+  justify-self: center;
+}
+
+/* Pip Grid Placements */
+.pip-center { grid-column: 2; grid-row: 2; }
+.pip-tl { grid-column: 1; grid-row: 1; }
+.pip-tr { grid-column: 3; grid-row: 1; }
+.pip-ml { grid-column: 1; grid-row: 2; }
+.pip-mr { grid-column: 3; grid-row: 2; }
+.pip-bl { grid-column: 1; grid-row: 3; }
+.pip-br { grid-column: 3; grid-row: 3; }
+
+/* Dynamic Dice Glow by Active Color */
+.dice-cube[data-color="red"] .dice-face {
+  border-color: rgba(255, 51, 102, 0.6);
+  background: rgba(255, 51, 102, 0.15);
+  box-shadow: inset 0 0 15px var(--color-red-glow), 0 0 20px var(--color-red-glow);
+}
+.dice-cube[data-color="red"] .pip {
+  background: #FF80AB;
+  box-shadow: 0 0 10px var(--color-red);
+}
+
+.dice-cube[data-color="green"] .dice-face {
+  border-color: rgba(0, 230, 118, 0.6);
+  background: rgba(0, 230, 118, 0.15);
+  box-shadow: inset 0 0 15px var(--color-green-glow), 0 0 20px var(--color-green-glow);
+}
+.dice-cube[data-color="green"] .pip {
+  background: #B9F6CA;
+  box-shadow: 0 0 10px var(--color-green);
+}
+
+.dice-cube[data-color="yellow"] .dice-face {
+  border-color: rgba(255, 214, 0, 0.6);
+  background: rgba(255, 214, 0, 0.15);
+  box-shadow: inset 0 0 15px var(--color-yellow-glow), 0 0 20px var(--color-yellow-glow);
+}
+.dice-cube[data-color="yellow"] .pip {
+  background: #FFFF8D;
+  box-shadow: 0 0 10px var(--color-yellow);
+}
+
+.dice-cube[data-color="blue"] .dice-face {
+  border-color: rgba(0, 210, 255, 0.6);
+  background: rgba(0, 210, 255, 0.15);
+  box-shadow: inset 0 0 15px var(--color-blue-glow), 0 0 20px var(--color-blue-glow);
+}
+.dice-cube[data-color="blue"] .pip {
+  background: #80D8FF;
+  box-shadow: 0 0 10px var(--color-blue);
+}
+
+/* Roll Dice Button */
+.btn-roll-dice {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn-roll-dice:hover:not(:disabled) {
+  background: linear-gradient(135deg, #34D399, #10B981);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.65);
+}
+
+.btn-roll-dice:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-roll-dice:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none;
+}
+
+.key-hint {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}

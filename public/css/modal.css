@@ -1,0 +1,423 @@
+/* ========================================================
+   LOODO - Glassmorphic Modals, Forms & Podium Aesthetics
+   ======================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 14, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 24px;
+  background: rgba(18, 24, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: scale(0.92) translateY(10px);
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-overlay.active .modal-card {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94A3B8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  transform: rotate(90deg);
+}
+
+/* Mode Selection Cards Grid */
+.mode-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mode-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.mode-icon {
+  font-size: 28px;
+  margin-bottom: 2px;
+}
+
+.mode-card h3 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.mode-card p {
+  font-size: 13px;
+  color: #94A3B8;
+  line-height: 1.4;
+}
+
+.mode-badge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid #6366F1;
+  color: #A5B4FC;
+}
+
+/* Forms & Inputs */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #CBD5E1;
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: #8B5CF6;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* Player Inputs List */
+.player-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-row .glass-input {
+  flex: 1;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-red { background: var(--color-red); box-shadow: 0 0 8px var(--color-red); }
+.dot-green { background: var(--color-green); box-shadow: 0 0 8px var(--color-green); }
+.dot-yellow { background: var(--color-yellow); box-shadow: 0 0 8px var(--color-yellow); }
+.dot-blue { background: var(--color-blue); box-shadow: 0 0 8px var(--color-blue); }
+
+/* Online Lobby */
+.lobby-action-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.lobby-action-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-action-box h4 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: #FFFFFF;
+}
+
+.lobby-action-box p {
+  font-size: 12px;
+  color: #94A3B8;
+  margin-bottom: 6px;
+}
+
+.code-input {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Room View Section */
+.room-code-banner {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.room-code-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #A5B4FC;
+}
+
+.room-code-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #FFFFFF;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.lobby-players-box h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #CBD5E1;
+  margin-bottom: 10px;
+}
+
+.lobby-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.lobby-player-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.lobby-player-item .player-name {
+  flex: 1;
+}
+
+.player-slot-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lobby-footer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Rules Modal */
+.rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rule-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rule-icon {
+  font-size: 24px;
+}
+
+.rule-item h4 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+}
+
+.rule-item p {
+  font-size: 13px;
+  color: #94A3B8;
+  line-height: 1.4;
+}
+
+/* Victory Modal */
+.victory-card {
+  text-align: center;
+  max-width: 440px;
+}
+
+.victory-trophy {
+  font-size: 54px;
+  margin-bottom: 8px;
+  animation: bounceTrophy 1.5s ease infinite alternate;
+}
+
+@keyframes bounceTrophy {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-8px) scale(1.08); }
+}
+
+.victory-header h2 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #FFD600, #FFA000);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+
+.victory-header p {
+  font-size: 14px;
+  color: #CBD5E1;
+  margin-bottom: 20px;
+}
+
+.victory-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.podium-rank {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.podium-rank.rank-1 {
+  background: rgba(255, 214, 0, 0.15);
+  border-color: rgba(255, 214, 0, 0.5);
+  box-shadow: 0 0 18px rgba(255, 214, 0, 0.3);
+}
+
+.rank-badge {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.rank-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #FFFFFF;
+}

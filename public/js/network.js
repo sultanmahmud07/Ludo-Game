@@ -15,6 +15,7 @@ class NetworkClient {
     this.onExtraRoll = null;
     this.onGameEnded = null;
     this.onNewChat = null;
+    this.onPlayerStatusChanged = null;
     this.onConnectError = null;
   }
 
@@ -68,11 +69,15 @@ class NetworkClient {
     this.socket.on('new_chat', (data) => {
       if (this.onNewChat) this.onNewChat(data);
     });
+
+    this.socket.on('player_status_changed', (data) => {
+      if (this.onPlayerStatusChanged) this.onPlayerStatusChanged(data);
+    });
   }
 
-  createRoom(playerName, color, avatar, callback) {
+  createRoom(playerName, color, avatar, playerId, callback) {
     this.connect();
-    this.socket.emit('create_room', { playerName, color, avatar }, (res) => {
+    this.socket.emit('create_room', { playerName, color, avatar, playerId }, (res) => {
       if (res && res.success) {
         this.roomId = res.roomId;
         this.myColor = color;
@@ -81,9 +86,20 @@ class NetworkClient {
     });
   }
 
-  joinRoom(roomId, playerName, color, avatar, callback) {
+  joinRoom(roomId, playerName, color, avatar, playerId, callback) {
     this.connect();
-    this.socket.emit('join_room', { roomId, playerName, color, avatar }, (res) => {
+    this.socket.emit('join_room', { roomId, playerName, color, avatar, playerId }, (res) => {
+      if (res && res.success) {
+        this.roomId = res.roomId;
+        this.myColor = res.myColor;
+      }
+      if (typeof callback === 'function') callback(res);
+    });
+  }
+
+  rejoinRoom(roomId, playerId, playerName, callback) {
+    this.connect();
+    this.socket.emit('rejoin_room', { roomId, playerId, playerName }, (res) => {
       if (res && res.success) {
         this.roomId = res.roomId;
         this.myColor = res.myColor;

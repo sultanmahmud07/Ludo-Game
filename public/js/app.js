@@ -40,33 +40,101 @@ document.addEventListener('DOMContentLoaded', () => {
   let myPlayerName = localStorage.getItem('loodo_player_name') || 'Ludo Master';
   let myAvatar = localStorage.getItem('loodo_player_avatar') || '👑';
 
+  // Persistent Player ID for rejoining active games after reload
+  let myPlayerId = localStorage.getItem('loodo_player_id');
+  if (!myPlayerId) {
+    myPlayerId = 'p_' + Math.random().toString(36).substring(2, 10);
+    localStorage.setItem('loodo_player_id', myPlayerId);
+  }
+
   // ==========================================
-  // PROFILE & AVATAR SELECTION
+  // 20 AVATARS & PROFILE MANAGEMENT
   // ==========================================
   const homeNameInput = document.getElementById('input-home-name');
   const currentAvatarDisplay = document.getElementById('current-user-avatar');
   const avatarButtons = document.querySelectorAll('.btn-avatar-opt');
+  const modalAvatarPicker = document.getElementById('modal-avatar-picker');
+  const btnOpenAvatarModal = document.getElementById('btn-open-avatar-modal');
+  const modalAvatarButtons = document.querySelectorAll('.modal-avatar-btn');
 
   homeNameInput.value = myPlayerName;
   currentAvatarDisplay.textContent = myAvatar;
 
-  avatarButtons.forEach(btn => {
-    if (btn.dataset.avatar === myAvatar) btn.classList.add('selected');
-    else btn.classList.remove('selected');
+  function setProfileAvatar(avatar) {
+    myAvatar = avatar;
+    currentAvatarDisplay.textContent = myAvatar;
+    localStorage.setItem('loodo_player_avatar', myAvatar);
 
-    btn.addEventListener('click', () => {
-      avatarButtons.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      myAvatar = btn.dataset.avatar;
-      currentAvatarDisplay.textContent = myAvatar;
-      localStorage.setItem('loodo_player_avatar', myAvatar);
+    avatarButtons.forEach(b => {
+      b.classList.toggle('selected', b.dataset.avatar === myAvatar);
     });
+
+    modalAvatarButtons.forEach(b => {
+      b.classList.toggle('selected', b.dataset.avatar === myAvatar);
+    });
+  }
+
+  setProfileAvatar(myAvatar);
+
+  avatarButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (sound) sound.playButtonClick();
+      setProfileAvatar(btn.dataset.avatar);
+    });
+  });
+
+  modalAvatarButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (sound) sound.playButtonClick();
+      setProfileAvatar(btn.dataset.avatar);
+      closeAllModalsAndDrawers();
+    });
+  });
+
+  if (btnOpenAvatarModal) {
+    btnOpenAvatarModal.addEventListener('click', () => {
+      if (sound) sound.playButtonClick();
+      openModal(modalAvatarPicker);
+    });
+  }
+
+  currentAvatarDisplay.addEventListener('click', () => {
+    if (sound) sound.playButtonClick();
+    openModal(modalAvatarPicker);
   });
 
   homeNameInput.addEventListener('input', () => {
     myPlayerName = homeNameInput.value.trim() || 'Player';
     localStorage.setItem('loodo_player_name', myPlayerName);
   });
+
+  // Auto-play single move option state
+  let autoPlaySingleOption = localStorage.getItem('loodo_autoplay') !== 'false';
+  const autoPlayBtn = document.getElementById('btn-toggle-autoplay');
+
+  function updateAutoPlayBtn() {
+    if (!autoPlayBtn) return;
+    if (autoPlaySingleOption) {
+      autoPlayBtn.classList.add('active');
+      autoPlayBtn.innerHTML = '⚡ Auto: ON';
+      autoPlayBtn.title = 'Auto-move active when only 1 valid option exists (Tap to toggle)';
+    } else {
+      autoPlayBtn.classList.remove('active');
+      autoPlayBtn.innerHTML = '⚡ Auto: OFF';
+      autoPlayBtn.title = 'Manual move required (Tap to toggle)';
+    }
+  }
+  updateAutoPlayBtn();
+
+  if (autoPlayBtn) {
+    autoPlayBtn.addEventListener('click', () => {
+      if (sound) sound.playButtonClick();
+      autoPlaySingleOption = !autoPlaySingleOption;
+      localStorage.setItem('loodo_autoplay', autoPlaySingleOption);
+      updateAutoPlayBtn();
+      ui.showTurnMessage(autoPlaySingleOption ? '⚡ Auto-Move (Single Option) Enabled' : 'Auto-Move Disabled', 'info');
+    });
+  }
 
   // ==========================================
   // SCREEN ROUTER
@@ -87,21 +155,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // SOUND CONTROLS
+  // SOUND CONTROLS & UNLOCK
   // ==========================================
+  const unlockAudio = () => {
+    if (window.soundCtrl) {
+      window.soundCtrl.unlock();
+    }
+  };
+  ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(evt => {
+    window.addEventListener(evt, unlockAudio, { passive: true });
+  });
+
   function updateSoundIcons() {
     const isMuted = sound.isMuted();
     const icon = isMuted ? '🔇' : '🔊';
-    document.querySelectorAll('#btn-menu-sound, #btn-arena-sound').forEach(btn => {
+    document.querySelectorAll('#btn-menu-sound, #btn-arena-sound, #btn-drawer-sound').forEach(btn => {
       btn.innerHTML = icon;
+      btn.title = isMuted ? 'Sound is Muted (Click to Unmute)' : 'Sound is Active (Click to Mute)';
     });
   }
   updateSoundIcons();
 
   document.querySelectorAll('#btn-menu-sound, #btn-arena-sound, #btn-drawer-sound').forEach(btn => {
     btn.addEventListener('click', () => {
-      sound.toggleMute();
+      const isMuted = sound.toggleMute();
       updateSoundIcons();
+      if (ui && ui.showTurnMessage) {
+        ui.showTurnMessage(isMuted ? '🔇 Sound Muted' : '🔊 Sound Enabled', 'info');
+      }
     });
   });
 
@@ -112,11 +193,32 @@ document.addEventListener('DOMContentLoaded', () => {
     handleTokenClick(color, tokenIdx);
   });
   ui.initBoard();
+  ui.setBoardOrientation('red');
 
   dice = new DiceController(diceCubeEl, (value) => {
     // Dice completed roll
   });
   dice.setValueInstant(1);
+
+  // Auto-reconnect to existing active game or lobby on page reload
+  const savedActiveRoom = localStorage.getItem('loodo_active_room');
+  if (savedActiveRoom) {
+    network.rejoinRoom(savedActiveRoom, myPlayerId, myPlayerName, (res) => {
+      if (res && res.success) {
+        if (res.status === 'playing' && res.gameState) {
+          restoreOnlineGameState(res);
+          ui.showTurnMessage(`✓ Rejoined active game (${res.roomId})!`, 'success');
+        } else if (res.status === 'lobby') {
+          currentRoomId = res.roomId;
+          myOnlineColor = res.myColor;
+          showLobbyScreen(res.roomId, res.players, res.hostSocketId === network.socket?.id);
+        }
+      } else {
+        localStorage.removeItem('loodo_active_room');
+        localStorage.removeItem('loodo_my_color');
+      }
+    });
+  }
 
   // ==========================================
   // DICE ROLL & MOVE TRIGGERS
@@ -136,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function triggerDiceRoll() {
     if (isProcessingMove || dice.isRolling || currentScreen !== 'arena') return;
+    if (sound) sound.playButtonClick();
 
     if (gameMode === 'online') {
       const activeColor = network.activeColor;
@@ -194,6 +297,14 @@ document.addEventListener('DOMContentLoaded', () => {
               engine.moveToken(bestToken);
             }
           }, 700);
+        } else if (autoPlaySingleOption && validTokens.length === 1) {
+          // Player has only 1 option! Auto-move the only valid token
+          ui.showTurnMessage(`⚡ Only 1 option - Auto-moving token ${validTokens[0] + 1}...`, 'info');
+          setTimeout(() => {
+            if (!isProcessingMove && engine.getActivePlayer().color === activeColor && engine.hasRolled) {
+              handleTokenClick(activeColor, validTokens[0]);
+            }
+          }, 480);
         }
       }
     });
@@ -261,16 +372,83 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ==========================================
+  // RESTORE ACTIVE GAME ON REJOIN / RECONNECT
+  // ==========================================
+  function restoreOnlineGameState(data) {
+    closeAllModalsAndDrawers();
+    gameMode = 'online';
+    currentRoomId = data.roomId;
+    myOnlineColor = data.myColor;
+    network.activeColor = data.gameState ? data.gameState.activeColor : 'red';
+    network.roomId = data.roomId;
+    network.myColor = data.myColor;
+
+    localStorage.setItem('loodo_active_room', data.roomId);
+    localStorage.setItem('loodo_my_color', data.myColor);
+
+    // Show room code chip in arena top bar
+    const roomChip = document.getElementById('arena-room-chip');
+    const roomText = document.getElementById('arena-room-code-text');
+    if (roomChip && currentRoomId) {
+      roomChip.style.display = 'inline-flex';
+      roomText.textContent = currentRoomId;
+    }
+
+    switchScreen('arena');
+    setupOnlinePlayerWidgets(data.players);
+
+    if (data.gameState) {
+      ui.renderTokens(data.gameState.tokens);
+      updateArenaPlayerWidgets(data.players, data.gameState.activeColor, data.gameState.tokens, data.gameState.winners);
+
+      const isMyTurn = (data.gameState.activeColor === myOnlineColor);
+      rollBtn.disabled = !isMyTurn || data.gameState.hasRolled;
+      dice.setDiceColor(data.gameState.activeColor);
+      dice.setValueInstant(data.gameState.diceValue || 1);
+
+      ui.showTurnMessage(
+        isMyTurn ? "It's YOUR turn! Tap Dice to Roll!" : `${capitalize(data.gameState.activeColor)}'s turn to roll`,
+        isMyTurn ? 'success' : 'info'
+      );
+    }
+
+    if (data.chatHistory && data.chatHistory.length) {
+      const chatMessages = document.getElementById('chat-messages');
+      if (chatMessages) {
+        chatMessages.innerHTML = '';
+        data.chatHistory.forEach(msg => appendChatMessage(msg));
+      }
+    }
+  }
+
+  // ==========================================
   // ONLINE MULTIPLAYER SOCKET HOOKS
   // ==========================================
   network.onRoomUpdated = (data) => {
     renderLobbySlots(data.players, data.hostSocketId);
   };
 
+  network.onPlayerStatusChanged = (data) => {
+    if (ui && ui.showTurnMessage) {
+      ui.showTurnMessage(
+        data.connected ? `✓ ${data.name} reconnected!` : `⚠️ ${data.name} disconnected (waiting...)`,
+        data.connected ? 'success' : 'warning'
+      );
+    }
+  };
+
   network.onGameStarted = (data) => {
     closeAllModalsAndDrawers();
     gameMode = 'online';
     network.activeColor = data.gameState.activeColor;
+
+    if (network.socket) {
+      const me = data.players.find(p => p.socketId === network.socket.id || p.playerId === myPlayerId);
+      if (me) myOnlineColor = me.color;
+    }
+
+    localStorage.setItem('loodo_active_room', currentRoomId);
+    localStorage.setItem('loodo_my_color', myOnlineColor);
 
     // Show room code chip in arena top bar
     const roomChip = document.getElementById('arena-room-chip');
@@ -316,8 +494,18 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         const isMyTurn = (activeColor === myOnlineColor);
         if (isMyTurn) {
-          ui.showTurnMessage(`You rolled ${roll}! Tap a glowing token.`, 'success');
-          ui.highlightMovableTokens(activeColor, validTokens);
+          if (autoPlaySingleOption && validTokens.length === 1) {
+            ui.highlightMovableTokens(activeColor, validTokens);
+            ui.showTurnMessage(`⚡ Only 1 option - Auto-moving token ${validTokens[0] + 1}...`, 'info');
+            setTimeout(() => {
+              if (!isProcessingMove && network.activeColor === myOnlineColor) {
+                handleTokenClick(activeColor, validTokens[0]);
+              }
+            }, 480);
+          } else {
+            ui.showTurnMessage(`You rolled ${roll}! Tap a glowing token.`, 'success');
+            ui.highlightMovableTokens(activeColor, validTokens);
+          }
         } else {
           ui.showTurnMessage(`${capitalize(activeColor)} rolled ${roll}. Moving...`, 'info');
         }
@@ -383,6 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   network.onNewChat = (msg) => {
     appendChatMessage(msg);
+    showPlayerSpeechBubble(msg.senderColor, msg.senderName, msg.avatar, msg.text, msg.emoji);
     if (msg.emoji) {
       showFloatingEmoji(msg.emoji, msg.senderColor);
     }
@@ -393,12 +582,125 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ==========================================
-  // ARENA PLAYER WIDGET UPDATER
   // ==========================================
-  function updateArenaPlayerWidgets(players, activeColor, tokensState, winners = []) {
-    players.forEach(p => {
-      const card = document.getElementById(`player-card-${p.color}`);
+  // DYNAMIC 4-CORNER SLOTS & SPEECH BUBBLES
+  // ==========================================
+  // 'bl': Bottom-Left (Dedicated ALWAYS for Local Player "YOU" with Own Square & Code)
+  // 'tl': Top-Left (Opponent 1)
+  // 'tr': Top-Right (Opponent 2)
+  // 'br': Bottom-Right (Opponent 3)
+  const slotOrder = ['bl', 'tl', 'tr', 'br'];
+  let playerColorToSlot = {}; // e.g. { red: 'bl', green: 'tl', yellow: 'tr', blue: 'br' }
+  let activeSlotPlayers = {}; // e.g. { bl: playerObj, tl: playerObj, ... }
+  const bubbleTimeouts = {};
+
+  function assignPlayerSlots(playersList, myColor) {
+    playerColorToSlot = {};
+    activeSlotPlayers = {};
+
+    const colorCycle = ['red', 'green', 'yellow', 'blue'];
+    const activePlayers = playersList.filter(p => p.active !== false);
+
+    // Find my player (or default to 1st active human or 1st player or red)
+    const myPlayer = activePlayers.find(p => p.color === myColor) 
+      || activePlayers.find(p => !p.isBot) 
+      || activePlayers[0]
+      || { color: myColor || 'red', name: myPlayerName, avatar: myAvatar };
+
+    const effectiveMyColor = myPlayer.color;
+    const myIdx = colorCycle.indexOf(effectiveMyColor);
+    const slotForOffset = ['bl', 'tl', 'tr', 'br'];
+
+    // Map each active player directly to their physical corner relative to rotated board
+    activePlayers.forEach(p => {
+      const colorIdx = colorCycle.indexOf(p.color);
+      const offset = (colorIdx - myIdx + 4) % 4;
+      const slot = slotForOffset[offset];
+      playerColorToSlot[p.color] = slot;
+      activeSlotPlayers[slot] = p;
+    });
+
+    // 3. Render all 4 corner cards in DOM
+    slotOrder.forEach(slot => {
+      const card = document.getElementById(`player-card-${slot}`);
       if (!card) return;
+
+      const p = activeSlotPlayers[slot];
+      if (!p) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.style.display = 'flex';
+      card.classList.remove('card-red', 'card-green', 'card-yellow', 'card-blue');
+      card.classList.add(`card-${p.color}`);
+      card.dataset.color = p.color;
+
+      if (slot === 'bl') {
+        const avatarEl = document.getElementById('bottom-left-avatar');
+        const nameEl = document.getElementById('bottom-left-name');
+        const dotEl = document.getElementById('bottom-left-dot');
+        const codeEl = document.getElementById('bottom-left-code-val');
+
+        if (avatarEl) avatarEl.textContent = p.avatar || myAvatar || '👑';
+        if (nameEl) nameEl.textContent = p.name || myPlayerName;
+        if (dotEl) dotEl.className = `mini-color-dot dot-${p.color}`;
+        if (codeEl) codeEl.textContent = currentRoomId || (gameMode === 'online' ? '----' : 'SOLO');
+      } else {
+        const avatarEl = document.getElementById(`avatar-${slot}`);
+        const nameEl = document.getElementById(`name-${slot}`);
+        const dotEl = document.getElementById(`dot-${slot}`);
+
+        if (avatarEl) avatarEl.textContent = p.avatar || (p.isBot ? '🤖' : '👤');
+        if (nameEl) nameEl.textContent = p.name;
+        if (dotEl) dotEl.className = `mini-color-dot dot-${p.color}`;
+      }
+    });
+  }
+
+  function showPlayerSpeechBubble(color, senderName, avatar, text, emoji) {
+    if (!color) return;
+    const slot = playerColorToSlot[color] || 'bl';
+    const bubbleEl = document.getElementById(`speech-bubble-${slot}`);
+    if (!bubbleEl) return;
+
+    if (sound && sound.playMessagePop) sound.playMessagePop();
+
+    // Reset color modifier classes and apply current speaking player's theme color
+    bubbleEl.classList.remove('bubble-color-red', 'bubble-color-green', 'bubble-color-yellow', 'bubble-color-blue');
+    bubbleEl.classList.add(`bubble-color-${color}`);
+
+    const isEmojiOnly = !text && !!emoji;
+    const contentHtml = isEmojiOnly
+      ? `<div class="bubble-emoji-large">${emoji}</div>`
+      : `<div class="speech-bubble-text">${escapeHtml(text || '')} ${emoji || ''}</div>`;
+
+    bubbleEl.innerHTML = `
+      <div class="speech-bubble-sender">
+        <span class="bubble-sender-avatar">${avatar || '👤'}</span>
+        <span class="bubble-sender-name">${escapeHtml(senderName || 'Player')}</span>
+      </div>
+      ${contentHtml}
+    `;
+
+    bubbleEl.classList.remove('bubble-active');
+    void bubbleEl.offsetWidth; // trigger reflow
+    bubbleEl.classList.add('bubble-active');
+
+    if (bubbleTimeouts[slot]) clearTimeout(bubbleTimeouts[slot]);
+
+    bubbleTimeouts[slot] = setTimeout(() => {
+      bubbleEl.classList.remove('bubble-active');
+    }, 3500);
+  }
+
+  function updateArenaPlayerWidgets(players, activeColor, tokensState, winners = []) {
+    slotOrder.forEach(slot => {
+      const card = document.getElementById(`player-card-${slot}`);
+      if (!card) return;
+
+      const p = activeSlotPlayers[slot];
+      if (!p) return;
 
       const isActive = (p.color === activeColor);
       card.classList.toggle('active-turn', isActive);
@@ -407,9 +709,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ? tokensState[p.color].filter(s => s === 56).length
         : 0;
 
-      const badge = card.querySelector('.tokens-home-badge');
+      const badge = slot === 'bl'
+        ? document.getElementById('bottom-left-tokens-badge')
+        : document.getElementById(`tokens-${slot}`);
+
       if (badge) {
-        if (winners.includes(p.color)) {
+        if (winners && winners.includes(p.color)) {
           const rank = winners.indexOf(p.color) + 1;
           const medals = ['🥇 1st', '🥈 2nd', '🥉 3rd', '4th'];
           badge.textContent = medals[rank - 1] || 'Win';
@@ -421,22 +726,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupOnlinePlayerWidgets(players) {
-    const allColors = ['red', 'green', 'yellow', 'blue'];
-    allColors.forEach(c => {
-      const card = document.getElementById(`player-card-${c}`);
-      if (card) card.style.display = 'none';
-    });
-
-    players.forEach(p => {
-      const card = document.getElementById(`player-card-${p.color}`);
-      if (card) {
-        card.style.display = 'flex';
-        const nameEl = card.querySelector('.player-name');
-        if (nameEl) nameEl.textContent = p.name + (p.socketId === network.socket.id ? ' (You)' : '');
-        const avatarEl = card.querySelector('.player-avatar');
-        if (avatarEl) avatarEl.textContent = p.avatar || '👤';
-      }
-    });
+    if (network.socket) {
+      const me = players.find(p => p.socketId === network.socket.id);
+      if (me) myOnlineColor = me.color;
+    }
+    const myColor = myOnlineColor || (players.find(p => !p.isBot) || players[0]).color;
+    assignPlayerSlots(players, myColor);
+    ui.setBoardOrientation(myColor);
   }
 
   function startOfflineGame(playersConfig) {
@@ -447,23 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const roomChip = document.getElementById('arena-room-chip');
     if (roomChip) roomChip.style.display = 'none';
 
-    // Show active player widgets
-    const allColors = ['red', 'green', 'yellow', 'blue'];
-    allColors.forEach(c => {
-      const card = document.getElementById(`player-card-${c}`);
-      if (card) card.style.display = 'none';
-    });
+    // In AI mode or pass & play, determine user color
+    const userPlayer = playersConfig.find(p => !p.isBot) || playersConfig[0];
+    const userColor = userPlayer ? userPlayer.color : 'red';
 
-    playersConfig.forEach(p => {
-      const card = document.getElementById(`player-card-${p.color}`);
-      if (card) {
-        card.style.display = p.active ? 'flex' : 'none';
-        const nameEl = card.querySelector('.player-name');
-        if (nameEl) nameEl.textContent = p.name;
-        const avatarEl = card.querySelector('.player-avatar');
-        if (avatarEl) avatarEl.textContent = p.avatar || (p.isBot ? '🤖' : '👤');
-      }
-    });
+    assignPlayerSlots(playersConfig.filter(p => p.active), userColor);
+    ui.setBoardOrientation(userColor);
 
     switchScreen('arena');
     engine.init(playersConfig);
@@ -476,10 +761,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   // Home buttons
   document.getElementById('btn-menu-online').addEventListener('click', () => {
+    sound.playButtonClick();
     switchScreen('portal');
   });
 
   document.getElementById('btn-menu-ai').addEventListener('click', () => {
+    sound.playButtonClick();
     const config = [
       { color: 'red', name: myPlayerName, isBot: false, active: true, avatar: myAvatar },
       { color: 'green', name: 'CyberBot', isBot: true, active: true, avatar: '🤖' },
@@ -490,10 +777,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btn-menu-pass').addEventListener('click', () => {
+    sound.playButtonClick();
     openModal(modalPassSetup);
   });
 
   document.getElementById('btn-menu-rules').addEventListener('click', () => {
+    sound.playButtonClick();
     openModal(modalRules);
   });
 
@@ -531,10 +820,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-action-create-room').addEventListener('click', () => {
     const chosenColor = document.querySelector('input[name="create-color"]:checked')?.value || 'red';
 
-    network.createRoom(myPlayerName, chosenColor, myAvatar, (res) => {
+    network.createRoom(myPlayerName, chosenColor, myAvatar, myPlayerId, (res) => {
       if (res && res.success) {
         currentRoomId = res.roomId;
         myOnlineColor = chosenColor;
+        localStorage.setItem('loodo_active_room', res.roomId);
+        localStorage.setItem('loodo_my_color', chosenColor);
         showLobbyScreen(res.roomId, res.players, true);
       } else {
         alert(res?.error || 'Failed to create room');
@@ -544,18 +835,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-action-join-room').addEventListener('click', () => {
     const code = document.getElementById('input-portal-room-code').value.trim().toUpperCase();
-    const chosenColor = document.querySelector('input[name="join-color"]:checked')?.value || 'green';
+    const chosenColor = document.querySelector('input[name="join-color"]:checked')?.value || 'yellow';
 
     if (!code) {
       alert('Please enter a 5-letter Room Code');
       return;
     }
 
-    network.joinRoom(code, myPlayerName, chosenColor, myAvatar, (res) => {
+    network.joinRoom(code, myPlayerName, chosenColor, myAvatar, myPlayerId, (res) => {
       if (res && res.success) {
         currentRoomId = res.roomId;
         myOnlineColor = res.myColor;
-        showLobbyScreen(res.roomId, res.players, res.hostSocketId === network.socket.id);
+        localStorage.setItem('loodo_active_room', res.roomId);
+        localStorage.setItem('loodo_my_color', res.myColor);
+        if (res.isRejoin && res.status === 'playing') {
+          restoreOnlineGameState(res);
+          ui.showTurnMessage(`✓ Rejoined active game!`, 'success');
+        } else {
+          showLobbyScreen(res.roomId, res.players, res.hostSocketId === network.socket.id);
+        }
       } else {
         alert(res?.error || 'Failed to join room');
       }
@@ -585,6 +883,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (countEl) countEl.textContent = players.length;
     list.innerHTML = '';
 
+    if (players.length === 2) {
+      const crossTag = document.createElement('div');
+      crossTag.className = 'lobby-cross-match-tag';
+      crossTag.style.cssText = 'text-align:center; padding: 6px 12px; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: #FFD600; background: rgba(255, 214, 0, 0.12); border: 1px dashed rgba(255, 214, 0, 0.4); border-radius: 8px;';
+      crossTag.innerHTML = `⚔️ 2-Player Cross Match: <strong>${capitalize(players[0].color)}</strong> vs <strong>${capitalize(players[1].color)}</strong> (Diagonal Corners)`;
+      list.appendChild(crossTag);
+    }
+
     players.forEach(p => {
       const card = document.createElement('div');
       card.className = `lobby-slot-card slot-${p.color}`;
@@ -613,8 +919,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('btn-leave-lobby').addEventListener('click', () => {
+    localStorage.removeItem('loodo_active_room');
+    localStorage.removeItem('loodo_my_color');
     network.leaveRoom(() => {
       currentRoomId = null;
+      myOnlineColor = null;
       switchScreen('menu');
     });
   });
@@ -668,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   document.getElementById('btn-start-pass-game').addEventListener('click', () => {
     const count = parseInt(document.getElementById('select-player-count').value, 10);
-    const p1 = document.getElementById('input-p1-name').value.trim() || 'Player 1';
+    const p1 = document.getElementById('input-p1-name').value.trim() || myPlayerName || 'Player 1';
     const p2 = document.getElementById('input-p2-name').value.trim() || 'Player 2';
     const p3 = document.getElementById('input-p3-name').value.trim() || 'Player 3';
     const p4 = document.getElementById('input-p4-name').value.trim() || 'Player 4';
@@ -676,21 +985,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let config = [];
     if (count === 2) {
       config = [
-        { color: 'red', name: p1, isBot: false, active: true, avatar: '🔴' },
-        { color: 'yellow', name: p2, isBot: false, active: true, avatar: '🟡' }
+        { color: 'red', name: p1, isBot: false, active: true, avatar: myAvatar || '👑' },
+        { color: 'yellow', name: p2, isBot: false, active: true, avatar: '🦊' }
       ];
     } else if (count === 3) {
       config = [
-        { color: 'red', name: p1, isBot: false, active: true, avatar: '🔴' },
-        { color: 'green', name: p2, isBot: false, active: true, avatar: '🟢' },
-        { color: 'yellow', name: p3, isBot: false, active: true, avatar: '🟡' }
+        { color: 'red', name: p1, isBot: false, active: true, avatar: myAvatar || '👑' },
+        { color: 'green', name: p2, isBot: false, active: true, avatar: '🦊' },
+        { color: 'yellow', name: p3, isBot: false, active: true, avatar: '🦁' }
       ];
     } else {
       config = [
-        { color: 'red', name: p1, isBot: false, active: true, avatar: '🔴' },
-        { color: 'green', name: p2, isBot: false, active: true, avatar: '🟢' },
-        { color: 'yellow', name: p3, isBot: false, active: true, avatar: '🟡' },
-        { color: 'blue', name: p4, isBot: false, active: true, avatar: '🔵' }
+        { color: 'red', name: p1, isBot: false, active: true, avatar: myAvatar || '👑' },
+        { color: 'green', name: p2, isBot: false, active: true, avatar: '🦊' },
+        { color: 'yellow', name: p3, isBot: false, active: true, avatar: '🦁' },
+        { color: 'blue', name: p4, isBot: false, active: true, avatar: '🐼' }
       ];
     }
 
@@ -715,9 +1024,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btn-drawer-exit').addEventListener('click', () => {
     if (confirm('Are you sure you want to return to the Main Menu?')) {
+      localStorage.removeItem('loodo_active_room');
+      localStorage.removeItem('loodo_my_color');
       if (gameMode === 'online') {
         network.leaveRoom();
       }
+      currentRoomId = null;
+      myOnlineColor = null;
       closeAllModalsAndDrawers();
       switchScreen('menu');
     }
@@ -739,14 +1052,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gameMode === 'online') {
       network.sendChat(text, null);
     } else {
-      const activeP = engine.getActivePlayer() || { name: myPlayerName, color: 'red', avatar: myAvatar };
+      const speakerP = (gameMode === 'ai') 
+        ? (engine.players.find(p => !p.isBot) || engine.getActivePlayer()) 
+        : (engine.getActivePlayer() || { name: myPlayerName, color: 'red', avatar: myAvatar });
       appendChatMessage({
-        senderName: activeP.name,
-        senderColor: activeP.color,
-        avatar: activeP.avatar,
+        senderName: speakerP.name,
+        senderColor: speakerP.color,
+        avatar: speakerP.avatar,
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
+      showPlayerSpeechBubble(speakerP.color, speakerP.name, speakerP.avatar, text, null);
     }
   }
 
@@ -780,8 +1096,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (gameMode === 'online') {
         network.sendChat('', emoji);
       } else {
-        const activeColor = engine.getActivePlayer() ? engine.getActivePlayer().color : 'red';
-        showFloatingEmoji(emoji, activeColor);
+        const speakerP = (gameMode === 'ai') 
+          ? (engine.players.find(p => !p.isBot) || engine.getActivePlayer()) 
+          : (engine.getActivePlayer() || { name: myPlayerName, color: 'red', avatar: myAvatar });
+        showFloatingEmoji(emoji, speakerP.color);
+        showPlayerSpeechBubble(speakerP.color, speakerP.name, speakerP.avatar, null, emoji);
       }
     });
   });
@@ -827,6 +1146,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.getElementById('btn-play-again').addEventListener('click', () => {
+    localStorage.removeItem('loodo_active_room');
+    localStorage.removeItem('loodo_my_color');
+    currentRoomId = null;
+    myOnlineColor = null;
     closeAllModalsAndDrawers();
     switchScreen('menu');
   });

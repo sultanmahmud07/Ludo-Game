@@ -3,8 +3,8 @@
    ======================================================== */
 
 .board-aspect-box {
-  width: 100%;
-  max-width: 600px;
+  width: min(92vw, calc(100dvh - 310px), 350px);
+  max-width: 350px;
   aspect-ratio: 1 / 1;
   display: flex;
   position: relative;
@@ -26,6 +26,7 @@
     inset 0 0 30px rgba(255, 255, 255, 0.04);
   position: relative;
   overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Base Cells */
@@ -61,7 +62,8 @@
   font-size: 15px;
   color: #FFD600;
   text-shadow: 0 0 8px rgba(255, 214, 0, 0.8);
-  transform: translateY(-1px);
+  display: inline-block;
+  transform: translateY(-1px) rotate(var(--board-counter-rot, 0deg));
 }
 
 /* Start Cells with respective color tint */
@@ -209,15 +211,15 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(var(--board-counter-rot, 0deg));
   font-size: 20px;
   filter: drop-shadow(0 0 8px rgba(255, 214, 0, 0.8));
   animation: pulseTrophy 2.5s ease-in-out infinite;
 }
 
 @keyframes pulseTrophy {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.18); }
+  0%, 100% { transform: translate(-50%, -50%) rotate(var(--board-counter-rot, 0deg)) scale(1); }
+  50% { transform: translate(-50%, -50%) rotate(var(--board-counter-rot, 0deg)) scale(1.18); }
 }
 
 /* Tokens Layer */
@@ -278,6 +280,8 @@
   font-weight: 800;
   color: #FFFFFF;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  display: inline-block;
+  transform: rotate(var(--board-counter-rot, 0deg));
 }
 
 /* Token Color Gradients */
@@ -339,4 +343,16 @@
 .ludo-token.token-hop {
   transition: transform 0.12s ease-out;
   transform: translate(-50%, -50%) scale(1.3) translateY(-8px) !important;
+}
+
+/* Inactive Board Sections (for 2-player or 3-player games) */
+.section-dimmed {
+  opacity: 0.16 !important;
+  filter: grayscale(0.9);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.yard-overlay.section-dimmed .yard-slot-ring {
+  border-style: dotted !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
 }

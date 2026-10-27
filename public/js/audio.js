@@ -7,21 +7,41 @@ class SoundController {
   }
 
   init() {
-    if (this.initialized) return;
+    if (this.initialized && this.ctx) {
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      return;
+    }
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
         this.initialized = true;
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
       }
     } catch (e) {
       console.warn('AudioContext init error:', e);
     }
   }
 
+  unlock() {
+    this.init();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      return this.ctx.resume().catch(() => {});
+    }
+    return Promise.resolve();
+  }
+
   toggleMute() {
     this.muted = !this.muted;
     localStorage.setItem('loodo_muted', this.muted);
+    if (!this.muted) {
+      this.unlock();
+      setTimeout(() => this.playChime(), 50);
+    }
     return this.muted;
   }
 
@@ -29,25 +49,51 @@ class SoundController {
     return this.muted;
   }
 
-  playDiceRoll() {
+  playChime() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    // Series of dice tumbling clicks
-    const clicks = 8;
-    for (let i = 0; i < clicks; i++) {
-      const time = now + (i * 0.08) + (Math.random() * 0.03);
+    const notes = [523.25, 783.99]; // C5 -> G5
+    notes.forEach((freq, idx) => {
+      const time = now + (idx * 0.09);
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(140 + Math.random() * 260, time);
-      osc.frequency.exponentialRampToValueAtTime(40, time + 0.04);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
 
-      gain.gain.setValueAtTime(0.2, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+      gain.gain.setValueAtTime(0.3, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(time);
+      osc.stop(time + 0.25);
+    });
+  }
+
+  playDiceRoll() {
+    if (this.muted) return;
+    this.unlock();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    // Multi-click tumbling rattle
+    const clicks = 9;
+    for (let i = 0; i < clicks; i++) {
+      const time = now + (i * 0.065) + (Math.random() * 0.02);
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = i % 2 === 0 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(200 + Math.random() * 320, time);
+      osc.frequency.exponentialRampToValueAtTime(60, time + 0.04);
+
+      gain.gain.setValueAtTime(0.3, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.045);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -55,36 +101,53 @@ class SoundController {
       osc.start(time);
       osc.stop(time + 0.05);
     }
+
+    // Heavy dice landing clatter
+    const landingTime = now + (clicks * 0.065) + 0.04;
+    const thud = this.ctx.createOscillator();
+    const thudGain = this.ctx.createGain();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(180, landingTime);
+    thud.frequency.exponentialRampToValueAtTime(45, landingTime + 0.14);
+
+    thudGain.gain.setValueAtTime(0.38, landingTime);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, landingTime + 0.16);
+
+    thud.connect(thudGain);
+    thudGain.connect(this.ctx.destination);
+
+    thud.start(landingTime);
+    thud.stop(landingTime + 0.18);
   }
 
   playTokenStep(stepIndex = 0) {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    // Marimba/Kalimba melodic pluck, pitch goes up slightly as token advances
-    const baseFreq = 320 + Math.min(stepIndex * 8, 300);
+    // Marimba/Kalimba melodic pluck, pitch rises smoothly as token advances
+    const baseFreq = 340 + Math.min(stepIndex * 10, 360);
     osc.type = 'sine';
     osc.frequency.setValueAtTime(baseFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, now + 0.14);
 
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.13);
+    osc.stop(now + 0.16);
   }
 
   playCapture() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -93,10 +156,10 @@ class SoundController {
     const gain = this.ctx.createGain();
 
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(280, now);
+    osc.frequency.setValueAtTime(320, now);
     osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
 
-    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.setValueAtTime(0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
     osc.connect(gain);
@@ -109,10 +172,10 @@ class SoundController {
     const zap = this.ctx.createOscillator();
     const zapGain = this.ctx.createGain();
     zap.type = 'sine';
-    zap.frequency.setValueAtTime(600, now + 0.05);
-    zap.frequency.exponentialRampToValueAtTime(120, now + 0.3);
+    zap.frequency.setValueAtTime(700, now + 0.05);
+    zap.frequency.exponentialRampToValueAtTime(140, now + 0.3);
 
-    zapGain.gain.setValueAtTime(0.2, now + 0.05);
+    zapGain.gain.setValueAtTime(0.25, now + 0.05);
     zapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     zap.connect(zapGain);
@@ -124,7 +187,7 @@ class SoundController {
 
   playSafeSpot() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -138,7 +201,7 @@ class SoundController {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, time);
 
-      gain.gain.setValueAtTime(0.18, time);
+      gain.gain.setValueAtTime(0.22, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
 
       osc.connect(gain);
@@ -151,7 +214,7 @@ class SoundController {
 
   playHomeEnter() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -164,7 +227,7 @@ class SoundController {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now);
 
-      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.setValueAtTime(0.3, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
       osc.connect(gain);
@@ -177,7 +240,7 @@ class SoundController {
 
   playVictory() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -198,7 +261,7 @@ class SoundController {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(note.f, time);
 
-      gain.gain.setValueAtTime(0.3, time);
+      gain.gain.setValueAtTime(0.35, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + note.d);
 
       osc.connect(gain);
@@ -211,7 +274,7 @@ class SoundController {
 
   playButtonClick() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -219,22 +282,22 @@ class SoundController {
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(480, now);
-    osc.frequency.exponentialRampToValueAtTime(600, now + 0.04);
+    osc.frequency.setValueAtTime(540, now);
+    osc.frequency.exponentialRampToValueAtTime(860, now + 0.05);
 
-    gain.gain.setValueAtTime(0.12, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
 
     osc.start(now);
-    osc.stop(now + 0.06);
+    osc.stop(now + 0.07);
   }
 
   playPenalty() {
     if (this.muted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
@@ -242,10 +305,10 @@ class SoundController {
     const gain = this.ctx.createGain();
 
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.setValueAtTime(200, now);
     osc.frequency.setValueAtTime(140, now + 0.1);
 
-    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.setValueAtTime(0.25, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     osc.connect(gain);
@@ -253,6 +316,29 @@ class SoundController {
 
     osc.start(now);
     osc.stop(now + 0.35);
+  }
+
+  playMessagePop() {
+    if (this.muted) return;
+    this.unlock();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(460, now);
+    osc.frequency.exponentialRampToValueAtTime(920, now + 0.08);
+
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.15);
   }
 }
 

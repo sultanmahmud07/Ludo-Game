@@ -17,10 +17,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- CSS Stylesheets -->
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/board.css">
-  <link rel="stylesheet" href="css/dice.css">
-  <link rel="stylesheet" href="css/modal.css">
+  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/board.css?v=5">
+  <link rel="stylesheet" href="css/dice.css?v=5">
+  <link rel="stylesheet" href="css/modal.css?v=5">
 </head>
 <body>
   <!-- Ambient Glassmorphic Background Orbs -->
@@ -53,15 +53,31 @@
             <input type="text" id="input-home-name" class="user-name-input" value="Ludo Master" maxlength="15" placeholder="Enter Name" />
           </div>
         </div>
-        <div class="avatar-picker-row" id="avatar-picker-row">
-          <button class="btn-avatar-opt selected" data-avatar="👑">👑</button>
-          <button class="btn-avatar-opt" data-avatar="🦊">🦊</button>
-          <button class="btn-avatar-opt" data-avatar="🦁">🦁</button>
-          <button class="btn-avatar-opt" data-avatar="🐯">🐯</button>
-          <button class="btn-avatar-opt" data-avatar="🐼">🐼</button>
-          <button class="btn-avatar-opt" data-avatar="🚀">🚀</button>
-          <button class="btn-avatar-opt" data-avatar="⚡">⚡</button>
-          <button class="btn-avatar-opt" data-avatar="🔥">🔥</button>
+        <div class="avatar-picker-header">
+          <span class="picker-hint-text">Choose Profile Avatar (20 Available):</span>
+          <button id="btn-open-avatar-modal" class="btn-sm-text">View All 20 🎨</button>
+        </div>
+        <div class="avatar-picker-grid" id="avatar-picker-row">
+          <button class="btn-avatar-opt selected" data-avatar="👑" title="King">👑</button>
+          <button class="btn-avatar-opt" data-avatar="🦊" title="Fox">🦊</button>
+          <button class="btn-avatar-opt" data-avatar="🦁" title="Lion">🦁</button>
+          <button class="btn-avatar-opt" data-avatar="🐯" title="Tiger">🐯</button>
+          <button class="btn-avatar-opt" data-avatar="🐼" title="Panda">🐼</button>
+          <button class="btn-avatar-opt" data-avatar="🦄" title="Unicorn">🦄</button>
+          <button class="btn-avatar-opt" data-avatar="🚀" title="Rocket">🚀</button>
+          <button class="btn-avatar-opt" data-avatar="🤖" title="Robot">🤖</button>
+          <button class="btn-avatar-opt" data-avatar="⚡" title="Bolt">⚡</button>
+          <button class="btn-avatar-opt" data-avatar="🔥" title="Fire">🔥</button>
+          <button class="btn-avatar-opt" data-avatar="🥷" title="Ninja">🥷</button>
+          <button class="btn-avatar-opt" data-avatar="🧙‍♂️" title="Wizard">🧙‍♂️</button>
+          <button class="btn-avatar-opt" data-avatar="🧝‍♀️" title="Elf">🧝‍♀️</button>
+          <button class="btn-avatar-opt" data-avatar="🧛" title="Vampire">🧛</button>
+          <button class="btn-avatar-opt" data-avatar="🐉" title="Dragon">🐉</button>
+          <button class="btn-avatar-opt" data-avatar="🦅" title="Eagle">🦅</button>
+          <button class="btn-avatar-opt" data-avatar="🐺" title="Wolf">🐺</button>
+          <button class="btn-avatar-opt" data-avatar="👾" title="Alien">👾</button>
+          <button class="btn-avatar-opt" data-avatar="🎯" title="Target">🎯</button>
+          <button class="btn-avatar-opt" data-avatar="💎" title="Diamond">💎</button>
         </div>
       </div>
 
@@ -281,6 +297,7 @@
         </div>
 
         <div class="arena-nav-right">
+          <button id="btn-toggle-autoplay" class="btn-glass btn-sm btn-autoplay active" title="Toggle Auto-Move for single valid options">⚡ Auto: ON</button>
           <button id="btn-arena-sound" class="btn-glass-icon" title="Toggle Sound">🔊</button>
           <button id="btn-toggle-chat" class="btn-glass-icon relative-badge" title="Live Reactions">
             💬
@@ -291,34 +308,36 @@
 
       <!-- Center Game Arena (Top Players + 15x15 Board + Bottom Players) -->
       <main class="arena-center-stage">
-        <!-- Top Row Players: Red (Top-Left) and Green (Top-Right) -->
+        <!-- Top Row Players: Green (Top-Left) and Yellow (Top-Right) -->
         <div class="arena-players-row top-players-row">
-          <!-- Red Player Widget -->
-          <div id="player-card-red" class="mini-player-badge card-red glass-panel">
+          <!-- Top-Left Player Widget: Opponent 1 (Green) -->
+          <div id="player-card-tl" class="mini-player-badge card-green glass-panel">
+            <div class="player-speech-bubble bubble-top-left" id="speech-bubble-tl"></div>
             <div class="mini-avatar-wrap">
-              <span class="player-avatar">👑</span>
+              <span class="player-avatar" id="avatar-tl">🤖</span>
               <div class="player-turn-ring"></div>
             </div>
             <div class="mini-player-info">
               <div class="mini-name-row">
-                <span class="player-name">Player 1</span>
-                <span class="mini-color-dot dot-red"></span>
+                <span class="player-name" id="name-tl">CyberBot</span>
+                <span class="mini-color-dot dot-green" id="dot-tl"></span>
               </div>
-              <span class="tokens-home-badge">0/4</span>
+              <span class="tokens-home-badge" id="tokens-tl">0/4</span>
             </div>
           </div>
 
-          <!-- Green Player Widget -->
-          <div id="player-card-green" class="mini-player-badge card-green glass-panel">
+          <!-- Top-Right Player Widget: Opponent 2 (Yellow) -->
+          <div id="player-card-tr" class="mini-player-badge card-yellow glass-panel">
+            <div class="player-speech-bubble bubble-top-right" id="speech-bubble-tr"></div>
             <div class="mini-player-info align-right">
               <div class="mini-name-row">
-                <span class="mini-color-dot dot-green"></span>
-                <span class="player-name">Player 2</span>
+                <span class="mini-color-dot dot-yellow" id="dot-tr"></span>
+                <span class="player-name" id="name-tr">NexusAI</span>
               </div>
-              <span class="tokens-home-badge">0/4</span>
+              <span class="tokens-home-badge" id="tokens-tr">0/4</span>
             </div>
             <div class="mini-avatar-wrap">
-              <span class="player-avatar">🤖</span>
+              <span class="player-avatar" id="avatar-tr">👾</span>
               <div class="player-turn-ring"></div>
             </div>
           </div>
@@ -333,34 +352,40 @@
           </div>
         </div>
 
-        <!-- Bottom Row Players: Blue (Bottom-Left) and Yellow (Bottom-Right) -->
+        <!-- Bottom Row Players: Bottom-Left (Dedicated Own Player Square & Code - Red) and Bottom-Right (Blue) -->
         <div class="arena-players-row bottom-players-row">
-          <!-- Blue Player Widget -->
-          <div id="player-card-blue" class="mini-player-badge card-blue glass-panel">
+          <!-- Bottom-Left Player Widget: Dedicated for Own Player Square & Code in Bottom-Left View (Red) -->
+          <div id="player-card-bl" class="mini-player-badge card-red glass-panel own-player-square">
+            <div class="player-speech-bubble bubble-bottom-left" id="speech-bubble-bl"></div>
             <div class="mini-avatar-wrap">
-              <span class="player-avatar">⚡</span>
+              <span class="player-avatar" id="bottom-left-avatar">👑</span>
               <div class="player-turn-ring"></div>
             </div>
             <div class="mini-player-info">
               <div class="mini-name-row">
-                <span class="player-name">Player 4</span>
-                <span class="mini-color-dot dot-blue"></span>
+                <span class="player-name" id="bottom-left-name">Ludo Master</span>
+                <span class="mini-color-dot dot-red" id="bottom-left-dot"></span>
+                <span class="own-you-tag" id="bottom-left-you-tag">YOU</span>
               </div>
-              <span class="tokens-home-badge">0/4</span>
+              <div class="mini-meta-row">
+                <span class="tokens-home-badge" id="bottom-left-tokens-badge">0/4</span>
+                <span class="own-room-code-tag" id="bottom-left-room-code" title="Your Game Code">CODE: <strong id="bottom-left-code-val">----</strong></span>
+              </div>
             </div>
           </div>
 
-          <!-- Yellow Player Widget -->
-          <div id="player-card-yellow" class="mini-player-badge card-yellow glass-panel">
+          <!-- Bottom-Right Player Widget: Opponent 3 (Blue) -->
+          <div id="player-card-br" class="mini-player-badge card-blue glass-panel">
+            <div class="player-speech-bubble bubble-bottom-right" id="speech-bubble-br"></div>
             <div class="mini-player-info align-right">
               <div class="mini-name-row">
-                <span class="mini-color-dot dot-yellow"></span>
-                <span class="player-name">Player 3</span>
+                <span class="mini-color-dot dot-blue" id="dot-br"></span>
+                <span class="player-name" id="name-br">VortexAI</span>
               </div>
-              <span class="tokens-home-badge">0/4</span>
+              <span class="tokens-home-badge" id="tokens-br">0/4</span>
             </div>
             <div class="mini-avatar-wrap">
-              <span class="player-avatar">👾</span>
+              <span class="player-avatar" id="avatar-br">⚡</span>
               <div class="player-turn-ring"></div>
             </div>
           </div>
@@ -496,6 +521,99 @@
     </div>
   </div>
 
+  <!-- 20 Avatars Selector Modal -->
+  <div id="modal-avatar-picker" class="modal-overlay">
+    <div class="modal-card glass-panel avatar-modal-card">
+      <div class="modal-header">
+        <h2>Choose Your Avatar (20 Total)</h2>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <p class="avatar-modal-subtext">Pick any character avatar to represent your profile across online & offline games:</p>
+      <div class="avatar-modal-grid" id="modal-avatar-grid">
+        <button class="modal-avatar-btn" data-avatar="👑">
+          <span class="avatar-icon">👑</span>
+          <span class="avatar-label">King</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🦊">
+          <span class="avatar-icon">🦊</span>
+          <span class="avatar-label">Fox</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🦁">
+          <span class="avatar-icon">🦁</span>
+          <span class="avatar-label">Lion</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🐯">
+          <span class="avatar-icon">🐯</span>
+          <span class="avatar-label">Tiger</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🐼">
+          <span class="avatar-icon">🐼</span>
+          <span class="avatar-label">Panda</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🦄">
+          <span class="avatar-icon">🦄</span>
+          <span class="avatar-label">Unicorn</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🚀">
+          <span class="avatar-icon">🚀</span>
+          <span class="avatar-label">Rocket</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🤖">
+          <span class="avatar-icon">🤖</span>
+          <span class="avatar-label">Robot</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="⚡">
+          <span class="avatar-icon">⚡</span>
+          <span class="avatar-label">Bolt</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🔥">
+          <span class="avatar-icon">🔥</span>
+          <span class="avatar-label">Fire</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🥷">
+          <span class="avatar-icon">🥷</span>
+          <span class="avatar-label">Ninja</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🧙‍♂️">
+          <span class="avatar-icon">🧙‍♂️</span>
+          <span class="avatar-label">Wizard</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🧝‍♀️">
+          <span class="avatar-icon">🧝‍♀️</span>
+          <span class="avatar-label">Elf</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🧛">
+          <span class="avatar-icon">🧛</span>
+          <span class="avatar-label">Vampire</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🐉">
+          <span class="avatar-icon">🐉</span>
+          <span class="avatar-label">Dragon</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🦅">
+          <span class="avatar-icon">🦅</span>
+          <span class="avatar-label">Eagle</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🐺">
+          <span class="avatar-icon">🐺</span>
+          <span class="avatar-label">Wolf</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="👾">
+          <span class="avatar-icon">👾</span>
+          <span class="avatar-label">Alien</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="🎯">
+          <span class="avatar-icon">🎯</span>
+          <span class="avatar-label">Target</span>
+        </button>
+        <button class="modal-avatar-btn" data-avatar="💎">
+          <span class="avatar-icon">💎</span>
+          <span class="avatar-label">Diamond</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Rules Modal -->
   <div id="modal-rules" class="modal-overlay">
     <div class="modal-card glass-panel rules-modal-card">
@@ -557,14 +675,14 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <!-- Client JavaScript Modules -->
-  <script src="js/audio.js"></script>
-  <script src="js/board-data.js"></script>
-  <script src="js/game-engine.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/network.js"></script>
-  <script src="js/dice.js"></script>
-  <script src="js/particles.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/audio.js?v=5"></script>
+  <script src="js/board-data.js?v=5"></script>
+  <script src="js/game-engine.js?v=5"></script>
+  <script src="js/ai.js?v=5"></script>
+  <script src="js/network.js?v=5"></script>
+  <script src="js/dice.js?v=5"></script>
+  <script src="js/particles.js?v=5"></script>
+  <script src="js/ui.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>

@@ -5,6 +5,22 @@ class LudoUI {
     this.onTokenClick = onTokenClick;
     this.tokenElements = {}; // { 'red_0': el, ... }
     this.isAnimating = false;
+    this.currentOrientationColor = 'red';
+  }
+
+  // Rotate the board so the local player's house is always in the Bottom-Left
+  setBoardOrientation(myColor) {
+    const targetColor = myColor || 'red';
+    this.currentOrientationColor = targetColor;
+    const angles = {
+      blue: 0,
+      red: -90,
+      green: 180,
+      yellow: 90
+    };
+    const angle = angles[targetColor] !== undefined ? angles[targetColor] : -90;
+    this.board.style.transform = `rotate(${angle}deg)`;
+    this.board.style.setProperty('--board-counter-rot', `${-angle}deg`);
   }
 
   // Generate the 15x15 Glassmorphic Ludo Board Grid
@@ -189,12 +205,49 @@ class LudoUI {
     });
   }
 
+  // Dim or activate board sections based on active player colors
+  updateActiveSections(activeColors) {
+    const allColors = ['red', 'green', 'yellow', 'blue'];
+    allColors.forEach(color => {
+      const isActive = !activeColors || activeColors.length === 0 || activeColors.includes(color);
+      const yardOverlay = this.board.querySelector(`.yard-overlay-${color}`);
+      if (yardOverlay) {
+        yardOverlay.classList.toggle('section-dimmed', !isActive);
+      }
+      this.board.querySelectorAll(`.stretch-${color}, .start-${color}, .yard-${color}`).forEach(el => {
+        el.classList.toggle('section-dimmed', !isActive);
+      });
+      const tri = this.board.querySelector(`.tri-${color}`);
+      if (tri) {
+        tri.classList.toggle('section-dimmed', !isActive);
+      }
+    });
+  }
+
   // Update token positions with collision grouping
   renderTokens(tokensState) {
-    // Map track locations to lists of tokens to apply spacing offsets
+    const activeColors = Object.keys(tokensState || {});
+    const allColors = ['red', 'green', 'yellow', 'blue'];
+
+    // 1. Hide tokens for any colors that are NOT active in this game
+    allColors.forEach(color => {
+      const isActive = activeColors.includes(color);
+      for (let i = 0; i < 4; i++) {
+        const key = `${color}_${i}`;
+        const el = this.tokenElements[key];
+        if (el) {
+          el.style.display = isActive ? 'block' : 'none';
+        }
+      }
+    });
+
+    // 2. Dim inactive yard sections on the board
+    this.updateActiveSections(activeColors);
+
+    // 3. Position the active tokens
     const cellGroups = {};
 
-    for (const [color, steps] of Object.entries(tokensState)) {
+    for (const [color, steps] of Object.entries(tokensState || {})) {
       steps.forEach((step, idx) => {
         const key = `${color}_${idx}`;
         const coords = BoardData.getTokenCoordinates(color, idx, step);
